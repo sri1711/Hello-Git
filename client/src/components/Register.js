@@ -93,21 +93,28 @@ export default function Register() {
     console.log(form)
     event.preventDefault()
     const data = new FormData(event.currentTarget);
+    // const result = {
+    //         "email" : data.get('email'),
+    //         "password" : data.get('password'),
+    //         "firstName" : data.get('fname'),
+    //         "lastName" : data.get("lname"),
+    //         "birthDate" : data.get("bdate"),
+    //         "authProvider" : "email"
+    // }
     const result = {
-            "email" : data.get('email'),
-            "password" : data.get('password'),
-            "firstName" : data.get('fname'),
-            "lastName" : data.get("lname"),
-            "birthDate" : data.get("bdate")
+      "email" : "vijay@gmail.com",
+      "password" : "vijay",
+      "firstName" : "vijay",
+      "lastName" : "vijay",
+      "birthDate" : "vijay",
+      "authProvider" : "email"
     }
-    
     console.log(JSON.stringify(result));
     postDetails(JSON.stringify(result),form,event)
     form.reset()
-    navigate("/dashboard",{replace:true})
+    // navigate("/dashboard",{replace:true})
     // event.preventDefault()
   };
-
 
   async function postDetails(data,form,event){
     const response = await fetch("/api/add",{
@@ -120,9 +127,10 @@ export default function Register() {
     if(response.ok){
         console.log("It worked")
         // form.submit()
-        
+        console.log(response)
     }
   }
+
 
   return (
     
@@ -145,7 +153,7 @@ export default function Register() {
           <Typography component="h1" variant="h5">
             Register
           </Typography>
-          <Box name="regForm" component="form" onSubmit={handleSubmit} sx ={{mt:1}}>
+          <Box name="regForm" noValidate component="form" onSubmit={handleSubmit} sx ={{mt:1}}>
           
           <Grid container  spacing = {1}>
             <Grid item xs = {6}>

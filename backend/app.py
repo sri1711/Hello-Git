@@ -3,6 +3,8 @@ from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
 from ibmcloudant.cloudant_v1 import CloudantV1,Document
 from ibm_cloud_sdk_core import ApiException
 import cv2
+import uuid
+import ibm_db,ibm_db_dbi
 import mediapipe as mp
 
 import json
@@ -12,14 +14,18 @@ import cv2
 
 app = Flask(__name__)
 
-API_KEY = "f1_JHlznkRh8hLlfygIH7-VMqQpOOFEvqi3ZADOKIKrw"
+# API_KEY = "f1_JHlznkRh8hLlfygIH7-VMqQpOOFEvqi3ZADOKIKrw"
 
-CLOUDANT_URL="https://2b7a22a1-e249-469f-ab99-a0e004ca9ff2-bluemix.cloudantnosqldb.appdomain.cloud"
+# CLOUDANT_URL="https://2b7a22a1-e249-469f-ab99-a0e004ca9ff2-bluemix.cloudantnosqldb.appdomain.cloud"
+
+
+IBM_DB_CONN = ibm_db.connect("DATABASE=bludb;HOSTNAME=b1bc1829-6f45-4cd4-bef4-10cf081900bf.c1ogj3sd0tgtu0lqde00.databases.appdomain.cloud;PORT=32304;SECURITY=SSL;SSLServerCertificate=DigiCertGlobalRootCA.crt;UID=pnf42623;PWD=F581rHVxDEmhkgML;", "", "")
+conn = ibm_db_dbi.Connection(IBM_DB_CONN)
 # CLOUDANT_APIKEY="9_njsNZs9YSwtsmHglVYSM6ue_ivE4E73k5SlRR7PbRP"
 
-authenticator = IAMAuthenticator(API_KEY)
-service = CloudantV1(authenticator=authenticator)
-service.set_service_url(CLOUDANT_URL)
+# authenticator = IAMAuthenticator(API_KEY)
+# service = CloudantV1(authenticator=authenticator)
+# service.set_service_url(CLOUDANT_URL)
 
 # Add a Document to IBM cloudant
 
@@ -119,10 +125,65 @@ ob = VideoCamera()
 @app.route("/api/add", methods = ['POST'])
 def add():
     result = request.get_json()
-    print(type(result))
-    print("The data is " + result["firstName"])
-    return "The data is" + result["firstName"]
+    id = uuid.uuid4().int
+    fname = result["firstName"]
+    lname = result["lastName"]
+    birthDate = result["birthDate"]
+    email = result["email"]
+    password = result["password"]
+    authProvider = result["authProvider"]
 
+    row = checkEmail(email)
+
+    # fetch_stmt = f"""SELECT * FROM "PNF42623"."SIGNLANGUAGE" WHERE "EMAIL" = '{email}';"""
+    # print(fetch_stmt)
+    # stmt = ibm_db.prepare(IBM_DB_CONN, fetch_stmt)
+    # cur = conn.cursor()
+    # cur.execute(fetch_stmt)
+    # row = cur.fetchall()
+    if(len(row)!=0):
+        print("Email id already exists")
+        return Response("Email id already exists")
+    else:
+        sql=f"""INSERT INTO "PNF42623"."SIGNLANGUAGE" VALUES('{fname}','{lname}','{birthDate}','{email}','{password}','{authProvider}')"""
+        reg_user = ibm_db.exec_immediate(IBM_DB_CONN,sql)
+        print("User Registered successfully")
+        return Response("Details added successfully")
+
+def checkEmail(email):
+    fetch_stmt = f"""SELECT * FROM "PNF42623"."SIGNLANGUAGE" WHERE "EMAIL" = '{email}';"""
+    print(fetch_stmt)
+    # stmt = ibm_db.prepare(IBM_DB_CONN, fetch_stmt)
+    cur = conn.cursor()
+    cur.execute(fetch_stmt)
+    row = cur.fetchall()
+    return row
+
+@app.route("/api/login", methods = ['POST'])
+def login():
+    result = request.get_json()
+    email = result["email"]
+    password = result["password"]
+
+    row = checkEmail(email)
+    print(row)
+    if(len(row)!=0):
+        print("Email ID validated")
+        stored_pass = row[0][4]
+        if(password == stored_pass):
+            print("Password success")
+            print("User logged in successfully")
+        else:
+            print("User login failed due to invalid password")
+
+    return "User Logged In Successfully"
+    
+
+def create_table():
+    sql='''create table signLanguage(id int, first_name varchar(50),
+     last_name varchar(50), birthDate varchar(50), email varchar(50), password varchar(100), authProvider varchar(50) )'''
+    stmt = ibm_db.prepare(IBM_DB_CONN,sql)
+    ibm_db.execute(stmt)
 
 def gen(camera):
     while True:
@@ -133,10 +194,10 @@ def gen(camera):
 def releaseCamera(camera):
     camera.clear()
 
-@app.route("/api/video_feed")
-def video_feed():
-    return Response(gen(ob),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+# @app.route("/api/video_feed")
+# def video_feed():
+#     return Response(gen(ob),
+#                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route("/api/release")
 def release():
@@ -145,3 +206,5 @@ def release():
 
 
 app.run(debug=True)
+
+# create_table()

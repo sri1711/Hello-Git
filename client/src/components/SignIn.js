@@ -13,11 +13,12 @@ import Box from '@mui/material/Box';
 import LoginIcon from '@mui/icons-material/Login';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+// import Register from './Register';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {BrowserRouter as Router, Route, Routes, } from 'react-router-dom';
 // import { InputAdornment, IconButton } from "@mui/material/core";
 
-import { InputAdornment, IconButton, OutlinedInput } from '@mui/material';
+import { InputAdornment, IconButton, OutlinedInput, modalUnstyledClasses } from '@mui/material';
 
 import VisibilityOn from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -81,12 +82,35 @@ export default function SignIn() {
 
    const handleSubmit = (event) => {
     event.preventDefault();
+    var form = document.getElementsByName("loginForm")[0]
     const data = new FormData(event.currentTarget);
     console.log({
       email: data.get('email'),
       password: data.get('password'),
     });
+
+    const result = {
+      "email" : "vijay@gmail.com",
+      "password" : "vijay"
+    }
+    console.log(JSON.stringify(result));
+    postDetails(JSON.stringify(result),form,event)
   };
+
+  async function postDetails(data,form,event){
+    const response = await fetch("/api/login",{
+        method: 'POST',
+        headers: {
+            'Content-Type' : 'application/json'
+        },
+        body : data
+    })
+    if(response.ok){
+        console.log("It worked")
+        // form.submit()
+        console.log(response)
+    }
+  }
 
   return (
     
@@ -109,7 +133,7 @@ export default function SignIn() {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+          <Box name="loginForm" component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             <TextField
               margin="normal"
               required
