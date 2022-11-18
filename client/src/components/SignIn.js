@@ -13,6 +13,8 @@ import Box from '@mui/material/Box';
 import LoginIcon from '@mui/icons-material/Login';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import {useNavigate } from 'react-router-dom';
+
 // import Register from './Register';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {BrowserRouter as Router, Route, Routes, } from 'react-router-dom';
@@ -25,6 +27,8 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 // import VisibilityOff from "@material-ui/icons-material/VisibilityOff";
 import { useState } from 'react';
 import Register from './Register';
+
+const sessionCookie = "session";
 
 function Copyright(props) {
 
@@ -40,6 +44,7 @@ function Copyright(props) {
   );
 }
 
+
 const theme = createTheme({
   palette: {
     background:{
@@ -49,7 +54,41 @@ const theme = createTheme({
   },
 });
 
+function getMillisecondsForHours(hours) {
+  return hours*60*60*1000;
+}
+
+function createCookie(cookieName, cookieValue, cookieLifeTimeInHrs) {
+  const expireDate = Date.now() + getMillisecondsForHours(cookieLifeTimeInHrs);
+  let expireTime = "max-age=" + expireDate.toString();
+  document.cookie = cookieName + "=" + cookieValue + ";" + expireTime + ";path=/";
+  console.log("creating cookie")
+}
+
+function removeCookie(cookieName) {
+  let cookieValue = getCookie(cookieName);
+  let expireTime = "max-age=0";
+  document.cookie = cookieName + "=" + cookieValue + ";" + expireTime + ";path=/";
+  console.log("creating cookie")
+}
+
+function getCookie(cookieName) {
+  let cookie = {};
+  document.cookie.split(';').forEach(function(el) {
+    let [key,value] = el.split('=');
+    cookie[key.trim()] = value;
+  })
+  return cookie[cookieName];
+}
+
+// function createLocalStorageItem(item, value) {
+//   localStorage.setItem(item, value);
+
+// }
+
 export default function SignIn() {
+  const navigate = useNavigate();
+  checkAndRedirectToApplication();
   const [values, setValues] = React.useState({
     password: '',
     showPassword: false,
@@ -106,11 +145,26 @@ export default function SignIn() {
         body : data
     })
     if(response.ok){
-        console.log("It worked")
-        // form.submit()
+        let result = JSON.parse(data);
+        // let email = result[email];
+        console.log("It worked, creating cookie ");
+        createCookie(sessionCookie, "vijay@gmail.com" , 24);
         console.log(response)
+        checkAndRedirectToApplication();
     }
   }
+
+  
+
+  function checkAndRedirectToApplication() {
+    if (getCookie(sessionCookie) != undefined ) {
+      console.log("User has session..")
+      return navigate('/dashboard', {replace : true})
+    } else {
+      console.log("User donot have a session!");
+    }
+  }
+
 
   return (
     
