@@ -9,6 +9,10 @@ import hashlib
 import smtplib, random
 from email.message import EmailMessage
 import mediapipe as mp
+import cv2
+import mediapipe as mp
+from keras.models import load_model
+import numpy as np
 
 import json
 
@@ -16,7 +20,18 @@ import cv2
 
 otp = 1234
 
+change_background_mp = mp.solutions.selfie_segmentation
+change_bg_segment = change_background_mp.SelfieSegmentation()
+
+model = load_model('model_sign_predict')
+
+loc = None
+Char_Map = {0: '1', 1: '2', 2: '3', 3: '4', 4: '5', 5: '6', 6: '7', 7: '8', 8: '9', 9: 'A', 10: 'B', 11: 'C', 12: 'D',
+                  13: 'E', 14: 'F', 15: 'G', 16: 'H', 17: 'I', 18: 'J', 19: 'K', 20: 'L', 21: 'M', 22: 'N', 23: 'O', 24: 'P',
+                  25: 'Q', 26: 'R', 27: 'S', 28: 'T', 29: 'U', 30: 'V', 31: 'W', 32: 'X', 33: 'Y', 34: 'Z'}
+
 app = Flask(__name__)
+
 
 # API_KEY = "f1_JHlznkRh8hLlfygIH7-VMqQpOOFEvqi3ZADOKIKrw"
 
@@ -81,6 +96,30 @@ conn = ibm_db_dbi.Connection(IBM_DB_CONN)
 #       f'{json.dumps(document_example, indent=2)}')
 
 
+def predict(img):
+    prediction = model.predict(img.reshape(1, 128, 128, 1))
+    
+    #print(prediction)
+    for pred in prediction:
+        loc = np.where(pred == max(pred))
+    print(Char_Map[loc[0][0]])
+
+
+    
+
+def load_image(img):
+    
+    img = cv2.cvtColor(img , cv2.COLOR_BGR2RGB)
+    img = background_removal_mask(img)
+    img = cv2.resize(img , (128,128))
+    #print(type(img))
+    return img
+
+def background_removal_mask(image):
+    RGB_sample_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    result = change_bg_segment.process(RGB_sample_img)
+    return result.segmentation_mask
+
 sampleNum = 1
 class VideoCamera(object):
     def __init__(self):
@@ -88,43 +127,42 @@ class VideoCamera(object):
     def clear(self):
         print("In clear function")
         self.video.release()
+
     def get_frame(self):
         _, frame = self.video.read()
         # h, w, c = frame.shape
+        upper_left = (300, 100)
+        bottom_right = (600, 400)
+        frame = cv2.flip(frame, 1)
+        r = cv2.rectangle(frame, upper_left, bottom_right, (200, 50, 200), 5)
+        rect_img = frame[upper_left[1] : bottom_right[1], upper_left[0] : bottom_right[0]]
+        
+        sketcher_rect = rect_img
+        sketcher_rect = load_image(sketcher_rect)
+        #print(type(sketcher_react))
+        
+        result = ''
+        if sketcher_rect is not None:
+            if cv2.waitKey(1) & 0xFF == ord('p'):
+                predict(sketcher_rect)
+            cv2.imshow('new_frame',sketcher_rect)
+
+
         ret, jpeg = cv2.imencode('.jpg',frame)
+        
         return jpeg.tobytes()
 
-        # while True:
-            # framergb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            # result = hands.process(framergb)
-            # hand_landmarks = result.multi_hand_landmarks
-            # if hand_landmarks:
-            #     for handLMs in hand_landmarks:
-            #         x_max = 0
-            #         y_max = 0
-            #         x_min = w
-            #         y_min = h
-            #         for lm in handLMs.landmark:
-            #             x, y = int(lm.x * w), int(lm.y * h)
-            #             if x > x_max: 
-            #                 x_max = x
-            #             if x < x_min:
-            #                 x_min = x
-            #             if y > y_max:
-            #                 y_max = y
-            #             if y < y_min:
-            #                 y_min = y
-            #         cv2.rectangle(frame, (x_min-20, y_min-15), (x_max+20, y_max+20), (0, 255, 0), 2)
-            #         # cv2.imwrite("dataset/image."+str(1)+'.'+str(sampleNum)+".jpg",framergb[y_min-15:y_max+20,x_min-20:x_max+20])
-                    # sampleNum = sampleNum + 1
-                    # cv2.imshow('frame',frame)
-
-        #             mp_drawing.draw_landmarks(frame, handLMs, mphands.HAND_CONNECTIONS)
-            # cv2.waitKey(0)
-            # ret, jpeg = cv2.imencode('.jpg',frame)
-            # return jpeg.tobytes()
 
 ob = VideoCamera()      
+
+
+# @app.route("/api/get_result",methods = ['GET','POST'])
+# def get_result():
+#     global loc
+#     if loc is not None:
+#         return Response(Char_Map[loc[0][0]],mimetype="text")
+    
+#     return Response("No precition",mimetype="text")
 
 @app.route("/api/add", methods = ['GET','POST'])
 def add():
@@ -149,6 +187,7 @@ def add():
         print("Email id already exists")
         return {"failure" : "Email id already exists"}
     else:
+        password = getHashForPassword(password)
         sql=f"""INSERT INTO "PNF42623"."SIGNLANGUAGE" VALUES('{fname}','{lname}','{birthDate}','{email}','{password}','{authProvider}')"""
         reg_user = ibm_db.exec_immediate(IBM_DB_CONN,sql)
         print("User Registered successfully")
@@ -174,7 +213,8 @@ def login():
     if(len(row)!=0):
         print("Email ID validated")
         stored_pass = row[0][4]
-        if(password == stored_pass):
+        
+        if(getHashForPassword(password) == stored_pass):
             print("Password success")
             print("User logged in successfully")
         else:
@@ -262,17 +302,34 @@ def create_table():
 
 def gen(camera):
     while True:
+
         frame = camera.get_frame()
+    
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+        # predicted = result
+        
+        
+        # yield {"frame_details" : frame_details,
+        # "predicted" : predicted}
+
+    camera.video.release()
+    cv2.destroyAllWindows()
 
 def releaseCamera(camera):
     camera.clear()
 
-# @app.route("/api/video_feed")
-# def video_feed():
-#     return Response(gen(ob),
-#                     mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route("/api/video_feed", methods=['POST'])
+def video_feed():
+
+    return Response(gen(ob),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+    #  return Response("How are you",mimetype="text")
 
 @app.route("/api/release")
 def release():

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import "../App.css"
@@ -11,6 +11,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGoogleLogout } from 'react-google-login';
+import { AxiosProvider, Request, Get, Delete, Head, Post, Put, Patch, withAxios } from 'react-axios'
+
+
 const clientId = "972097787217-ieg349lso79987fd96uk8odr06onncgk.apps.googleusercontent.com"
 function Dashboard() {
 
@@ -82,6 +85,34 @@ function Dashboard() {
     onFailure
   }) 
 
+  // async function postDetails(){
+  //   const response = await fetch("/api/video_feed",{
+  //       method: 'POST',
+  //       headers: {
+  //           'Content-Type' : 'application/json'
+  //       },
+  //       body : "demo"
+  //   }).then(response => response.text()).then(response => {
+  //     console.log("In video"+response)
+  //     // const obj = JSON.parse(response)
+  //     // const key = Object.keys(obj) 
+      
+  //     // console.log("Keys: " + Object.keys(obj))
+  //     // if(key == "success"){
+  //     //   const successMessage = obj["success"];
+  //     //   message = successMessage;
+  //     //   console.log("Success" + response["success"])
+  //     // }
+  //     // if(key == "failure"){
+  //     //   const failureMessage = obj["failure"];
+  //     //   message = failureMessage;
+  //     //   console.log("Message: " +message)
+  //     //   console.log("Failure: " + obj["failure"])
+  //     // }
+      
+  //   })
+  // }
+
   // var cookieValue = getCookie("session")
   // if (cookieValue == undefined ) {
   //   console.log("User has session..")
@@ -89,6 +120,54 @@ function Dashboard() {
   // } else {
   //   console.log("User donot have a session!");
   // }
+
+  // async function new_result(){
+  //   useEffect(() => {
+  //     let interval = setInterval(() => {
+  //       const res = await fetch(`http://localhost:5000/api/get_result`);
+  //       console.log("result : "+ res)
+  //     }, 2000);
+      
+  //   }, []);
+  // }
+
+  // useEffect(()=>{
+  //   var handle=setInterval(getresult,5000);    
+
+  //   return ()=>{
+  //     clearInterval(handle);
+  //   }
+  // });
+
+  // function getresult(){
+  //   fetch("http://localhost:5000/api/get_result")
+  //     .then(
+  //       (result) => {          
+  //         console.log("new"+result)
+  //       }
+  //     );
+  // }
+
+  
+
+  
+
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //      axios
+  //       .post("http://localhost:5000/api/get_result")
+  //       .then(res => {
+  //         console.log("axios :" + res)
+  //         console.log(res.data)
+  //           const data = res.data;
+            
+  //       })
+  //       .catch(error => {
+  //           console.log(error);
+  //       });
+  //     }, 1000);
+  //     return () => clearInterval(interval);
+  //   }, []);
 
   return (
     <ThemeProvider theme={theme}>
@@ -123,14 +202,14 @@ function Dashboard() {
           
           
 
-          <img src='http://localhost:5000//api//video_feed'  alt="Video" className='videofeed' />
+          <img src="http://localhost:5000//api//video_feed"  alt="Video" className='videofeed' />
           {/* <img src = {`${async () => {await fetch("/api/video_feed")}}`} alt="video" /> */}
           <Grid sx={{mt:1}} spacing={2} container direction = "row" display={"flex"}  justifyContent="center" alignItems = "center">
             <Grid item >
             <Button  style = {{backgroundColor : "#42a5fc", color:"black"}} variant="contained">SPEECH</Button>
             </Grid>
             <Grid  item>
-          <Fab sx={{ml:2}} id="test" style = {{backgroundColor : "#3D3D3D"}} aria-label="add">
+          <Fab  sx={{ml:2}} id="test" style = {{backgroundColor : "#3D3D3D"}} aria-label="add">
             <FiberManualRecordIcon style = {{color : 'red'}}  />
           </Fab>
           </Grid>
@@ -138,6 +217,21 @@ function Dashboard() {
 
 
         </Box>
+
+        {/* <Get url="/api/get_result">
+        {(error, response, isLoading, makeRequest, axios) => {
+          if(error) {
+            return (<div>Something bad happened: {error.message} <button onClick={() => makeRequest({ params: { reload: true } })}>Retry</button></div>)
+          }
+          else if(isLoading) {
+            return (<div>Loading...</div>)
+          }
+          else if(response !== null) {
+            return (<div>{response}</div>)
+          }
+          return (<div>Default message before request is made.</div>)
+        }}
+      </Get> */}
 
         
       
