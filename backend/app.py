@@ -5,12 +5,16 @@ from ibm_cloud_sdk_core import ApiException
 import cv2
 import uuid
 import ibm_db,ibm_db_dbi
+import hashlib
+import smtplib, random
+from email.message import EmailMessage
 import mediapipe as mp
 
 import json
 
 import cv2
 
+otp = 1234
 
 app = Flask(__name__)
 
@@ -122,7 +126,7 @@ class VideoCamera(object):
 
 ob = VideoCamera()      
 
-@app.route("/api/add", methods = ['POST'])
+@app.route("/api/add", methods = ['GET','POST'])
 def add():
     result = request.get_json()
     id = uuid.uuid4().int
@@ -143,12 +147,12 @@ def add():
     # row = cur.fetchall()
     if(len(row)!=0):
         print("Email id already exists")
-        return Response("Email id already exists")
+        return {"failure" : "Email id already exists"}
     else:
         sql=f"""INSERT INTO "PNF42623"."SIGNLANGUAGE" VALUES('{fname}','{lname}','{birthDate}','{email}','{password}','{authProvider}')"""
         reg_user = ibm_db.exec_immediate(IBM_DB_CONN,sql)
         print("User Registered successfully")
-        return Response("Details added successfully")
+        return {"success": "Details added successfully"}
 
 def checkEmail(email):
     fetch_stmt = f"""SELECT * FROM "PNF42623"."SIGNLANGUAGE" WHERE "EMAIL" = '{email}';"""
@@ -176,7 +180,78 @@ def login():
         else:
             print("User login failed due to invalid password")
 
-    return "User Logged In Successfully"
+    return {"success": "User Logged In Successfully"}
+
+@app.route('/api/sendEmail',methods = ['POST'])
+def sendEmail():
+    result = request.get_json()
+    sender_email = "pnt2022tmid02287@gmail.com"
+    mailMessage = getMailMessage()
+    print(mailMessage)
+    message = generateEmail(sender_email,result["email"],mailMessage)
+    return message
+
+@app.route('/api/changePass',methods=['POST'])
+def changePass():
+    result = request.get_json()
+    update_stmt =  f"""UPDATE "PNF42623"."SIGNLANGUAGE" SET "PASSWORD" = '{result["newPass"]}' WHERE "EMAIL" = '{result["email"]}';"""
+    ibm_db.exec_immediate(IBM_DB_CONN,update_stmt)
+    return {"success":"Password changed successfully" }
+
+@app.route('/api/validOTP',methods=['POST'])
+def validOTP():
+    result = request.get_json()
+    print("Valid OTP: " + result["OTP"])
+    global otp
+    if(otp == int(result["OTP"])):
+        return {"success":"OTP Validated successfully"}
+    else:
+        print(type(otp),int(result["OTP"]))
+        return {"failure":"Incorrect OTP"}
+
+def generateOTP():
+    tempOTP = random.random()
+    return round(tempOTP * 100000)
+
+
+def generateMailContent(OTP):
+    content = '''
+    Please use the verification code below to sign in.
+    {0}
+    If you didn’t request this, you can ignore this email.
+    Thanks,
+    The sigmoid'''.format(OTP)
+    # content = content.encode('utf-8')
+    return content
+
+def getMailMessage():
+    global otp
+    otp = generateOTP()
+    print("OTP in getMailMessage " + str(otp))
+    content = generateMailContent(otp)
+    return content
+
+def generateEmail(sender_email, receiver_email, content):
+    msg = EmailMessage()
+    msg.set_content(content)
+    sender_password = "quurwsaeefcwkvpa"
+    msg['Subject'] = 'OTP for Sigmoid'
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
+    s.login(sender_email, sender_password)
+    s.send_message(msg)
+    s.quit()
+    return {"success":"Email sent successfully"}
+
+
+
+def getHashForPassword(password):
+    return hashlib.md5(password.encode()).hexdigest()
+
+def isPasswordCorrect(oldPassword, newPassword):
+    return oldPassword == newPassword
     
 
 def create_table():

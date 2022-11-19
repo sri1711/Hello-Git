@@ -7,9 +7,13 @@ import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
+
 import InputLabel from '@mui/material/InputLabel';
+
+import {Navigate} from 'react-router-dom'
 import Link from '@mui/material/Link';
 import dayjs from 'dayjs'
+import Alert from '@mui/material/Alert';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -31,7 +35,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 // import VisibilityOff from "@material-ui/icons-material/VisibilityOff";
 import { useState } from 'react';
 // import Register from './Register';
-
+var message = "";
 function Copyright(props) {
 
   return (
@@ -45,7 +49,6 @@ function Copyright(props) {
     </Typography>
   );
 }
-
 const theme = createTheme({
   palette: {
     background:{
@@ -57,6 +60,7 @@ const theme = createTheme({
 });
 
 export default function Register() {
+  
   
   const [values, setValues] = React.useState({
     password: '',
@@ -86,6 +90,7 @@ export default function Register() {
     event.preventDefault();
   };
 
+  const [show, setShow] = useState(false);
   
 
    const handleSubmit = (event) => {
@@ -93,28 +98,29 @@ export default function Register() {
     console.log(form)
     event.preventDefault()
     const data = new FormData(event.currentTarget);
-    // const result = {
-    //         "email" : data.get('email'),
-    //         "password" : data.get('password'),
-    //         "firstName" : data.get('fname'),
-    //         "lastName" : data.get("lname"),
-    //         "birthDate" : data.get("bdate"),
-    //         "authProvider" : "email"
-    // }
     const result = {
-      "email" : "vijay@gmail.com",
-      "password" : "vijay",
-      "firstName" : "vijay",
-      "lastName" : "vijay",
-      "birthDate" : "vijay",
-      "authProvider" : "email"
+            "email" : data.get('email'),
+            "password" : data.get('password'),
+            "firstName" : data.get('fname'),
+            "lastName" : data.get("lname"),
+            "birthDate" : data.get("bdate"),
+            "authProvider" : "email"
     }
+    // const result = {
+    //   "email" : "vijay255@gmail.com",
+    //   "password" : "vijay",
+    //   "firstName" : "vijay",
+    //   "lastName" : "vijay",
+    //   "birthDate" : "vijay",
+    //   "authProvider" : "email"
+    // }
     console.log(JSON.stringify(result));
     postDetails(JSON.stringify(result),form,event)
     form.reset()
-    // navigate("/dashboard",{replace:true})
+    // return navigate("/dashboard",{replace:true})
     // event.preventDefault()
   };
+    
 
   async function postDetails(data,form,event){
     const response = await fetch("/api/add",{
@@ -123,12 +129,32 @@ export default function Register() {
             'Content-Type' : 'application/json'
         },
         body : data
+    }).then(response => response.text()).then(response => {
+      console.log(response)
+      const obj = JSON.parse(response)
+      const key = Object.keys(obj) 
+      
+      // console.log("Keys: " + Object.keys(obj))
+      if(key == "success"){
+        const successMessage = obj["success"];
+        message = successMessage;
+        console.log("Success" + response["success"])
+      }
+      if(key == "failure"){
+        const failureMessage = obj["failure"];
+        message = failureMessage;
+        console.log("Message: " +message)
+        console.log("Failure: " + obj["failure"])
+      }
+      
     })
-    if(response.ok){
-        console.log("It worked")
-        // form.submit()
-        console.log(response)
-    }
+    setShow(!show)
+    // if(response.ok){  
+    //     console.log("It worked");
+    //     // form.submit()
+    //     // <Navigate to="/dashboard" />
+    //     console.log(response.text());
+    // }
   }
 
 
@@ -153,7 +179,7 @@ export default function Register() {
           <Typography component="h1" variant="h5">
             Register
           </Typography>
-          <Box name="regForm" noValidate component="form" onSubmit={handleSubmit} sx ={{mt:1}}>
+          <Box name="regForm" component="form" onSubmit={handleSubmit} sx ={{mt:1}}>
           
           <Grid container  spacing = {1}>
             <Grid item xs = {6}>
@@ -229,12 +255,17 @@ export default function Register() {
               type="submit"
               fullWidth
               variant="contained"
+              
               sx={{ mt: 3, mb: 2 }}
             >
               Sign Up
             </Button>
-            
           </Box>
+
+
+          
+          {show && <Alert  sx={{mt:2}} fullWidth style = {{backgroundColor : "#001E3C"}} severity="error">{message}</Alert>}
+          
         </Box>
         <Copyright sx={{ mt: 8, mb: 4 }} />
       </Container>
