@@ -26,6 +26,7 @@ function Dashboard() {
   console.log("In dashboard: "+ response["session"])
   const [camValue,setCamValue] = useState(true)
   const [visible,setVisible] = useState(true)
+  const axios = require('axios');
 
 
 
@@ -51,6 +52,8 @@ function Dashboard() {
     },
   
   });
+
+  
 
   function removeCookie(cookieName) {
     let cookieValue = getCookie(cookieName);
@@ -84,6 +87,27 @@ function Dashboard() {
     onLogoutSuccess,
     onFailure
   }) 
+
+
+  async function createUser() {
+    // const response = await fetch(`/api/get_result`);
+    // const text = await response.text();
+    // return text;
+
+    const response = await fetch('/api/get_result').then(response => response.text()).then(response => console.log(response))
+  }
+
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+
+      createUser()
+
+      
+    }, 3000);
+  
+    return () => clearInterval(interval);
+  }, []);
 
   // async function postDetails(){
   //   const response = await fetch("/api/video_feed",{

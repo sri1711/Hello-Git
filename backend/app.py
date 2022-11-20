@@ -98,7 +98,7 @@ conn = ibm_db_dbi.Connection(IBM_DB_CONN)
 
 def predict(img):
     prediction = model.predict(img.reshape(1, 128, 128, 1))
-    
+    global loc
     #print(prediction)
     for pred in prediction:
         loc = np.where(pred == max(pred))
@@ -156,13 +156,14 @@ class VideoCamera(object):
 ob = VideoCamera()      
 
 
-# @app.route("/api/get_result",methods = ['GET','POST'])
-# def get_result():
-#     global loc
-#     if loc is not None:
-#         return Response(Char_Map[loc[0][0]],mimetype="text")
+@app.route("/api/get_result",methods = ['GET','POST'])
+def get_result():
+    global loc
+    print(loc)
+    if loc is not None:
+        return Response(Char_Map[loc[0][0]],mimetype="text")
     
-#     return Response("No precition",mimetype="text")
+    return Response("No precition",mimetype="text")
 
 @app.route("/api/add", methods = ['GET','POST'])
 def add():
@@ -323,7 +324,7 @@ def gen(camera):
 def releaseCamera(camera):
     camera.clear()
 
-@app.route("/api/video_feed", methods=['POST'])
+@app.route("/api/video_feed", methods=['GET'])
 def video_feed():
 
     return Response(gen(ob),
