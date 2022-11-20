@@ -11,14 +11,15 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGoogleLogout } from 'react-google-login';
-import { AxiosProvider, Request, Get, Delete, Head, Post, Put, Patch, withAxios } from 'react-axios'
+// import { AxiosProvider, Request, Get, Delete, Head, Post, Put, Patch, withAxios } from 'react-axios'
 
-
+var text = ""
 const clientId = "972097787217-ieg349lso79987fd96uk8odr06onncgk.apps.googleusercontent.com"
 function Dashboard() {
 
   const navigate = useNavigate()
   const {state} = useLocation()
+  const [text,setText] = useState("None")
   const {authProvider,response} = state;
   console.log("In dashboard: AuthProvider: " + authProvider)
   // console.log("In dashboard: " + response["name"])
@@ -26,7 +27,7 @@ function Dashboard() {
   console.log("In dashboard: "+ response["session"])
   const [camValue,setCamValue] = useState(true)
   const [visible,setVisible] = useState(true)
-  const axios = require('axios');
+  // const axios = require('axios');
 
 
 
@@ -94,9 +95,17 @@ function Dashboard() {
     // const text = await response.text();
     // return text;
 
-    const response = await fetch('/api/get_result').then(response => response.text()).then(response => console.log(response))
+    const response = await fetch('/api/get_result').then(response => response.text()).then(response => {
+      console.log(response)
+      setText(text => response)
+      console.log("Text: " + text)
+    })
   }
 
+  function textToSpeech(){
+    var msg = new SpeechSynthesisUtterance('The predicted result is: ' + text);
+    window.speechSynthesis.speak(msg);
+  }
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -223,6 +232,9 @@ function Dashboard() {
           {authProvider=="google"?<Typography color={"white"} display={"flex"} alignItems={"center"} sx={{p:2}} component="h1" variant="h5">
             Welcome {response["name"]} </Typography>:<Typography color={"white"} display={"flex"} alignItems={"center"} sx={{p:2}} component="h1" variant="h5">
             Welcome User </Typography>}
+
+            {<Typography color={"white"} display={"flex"} alignItems={"center"} sx={{p:2}} component="h1" variant="h5">
+            The predicted result is : {text}</Typography>}
           
           
 
@@ -230,7 +242,7 @@ function Dashboard() {
           {/* <img src = {`${async () => {await fetch("/api/video_feed")}}`} alt="video" /> */}
           <Grid sx={{mt:1}} spacing={2} container direction = "row" display={"flex"}  justifyContent="center" alignItems = "center">
             <Grid item >
-            <Button  style = {{backgroundColor : "#42a5fc", color:"black"}} variant="contained">SPEECH</Button>
+            <Button onClick={textToSpeech} style = {{backgroundColor : "#42a5fc", color:"black"}} variant="contained">SPEECH</Button>
             </Grid>
             <Grid  item>
           <Fab  sx={{ml:2}} id="test" style = {{backgroundColor : "#3D3D3D"}} aria-label="add">

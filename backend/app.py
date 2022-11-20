@@ -97,13 +97,13 @@ conn = ibm_db_dbi.Connection(IBM_DB_CONN)
 
 
 def predict(img):
+    global model
     prediction = model.predict(img.reshape(1, 128, 128, 1))
     global loc
     #print(prediction)
     for pred in prediction:
         loc = np.where(pred == max(pred))
     print(Char_Map[loc[0][0]])
-
 
     
 
@@ -161,9 +161,9 @@ def get_result():
     global loc
     print(loc)
     if loc is not None:
-        return Response(Char_Map[loc[0][0]],mimetype="text")
+        return Response(Char_Map[loc[0][0]])
     
-    return Response("No precition",mimetype="text")
+    return Response("No prediction")
 
 @app.route("/api/add", methods = ['GET','POST'])
 def add():
